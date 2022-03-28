@@ -1,12 +1,11 @@
-FPS control Chrome extension
-=======
+# Grablue FPS control Chrome extension fork FPS control Chrome extension
 
-Control FPS in your browser for testing or performance investigation. Check if your app can take being stressed out with dropped frames or low FPS.
+FPS が合っていないモニタ向け拡張機能
 
-*Work in progress*
+開発中
 
-License
--------
-MIT: http://mit-license.org/
+## License
+
+MIT: <http://mit-license.org/>
 
 Copyright 2018 Denis Radin aka [PixelsCommander](http://pixelscommander.com)
