@@ -1,54 +1,32 @@
-import '../css/popup.css';
+import "../css/popup.css";
 
-window.addEventListener('DOMContentLoaded', function () {
-    var dropFramesSelect = document.getElementById('dropframes');
-    var limitFPSSelect = document.getElementById('limitfps');
+window.addEventListener("DOMContentLoaded", function () {
+  var enableInput = document.getElementById("enable-extension");
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === 'setPopupState') {
-            var percentage = message.value.dropFrames.toString();
-            document.getElementById('dropFrames' + percentage).selected = true;
-            dropFramesSelect.value = percentage;
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "setPopupState") {
+      enableInput.checked = message.value.enable;
+    }
+  });
 
-            var maxFPS = message.value.maxFPS.toString();
-            document.getElementById('limitfps' + maxFPS).selected = true;
-            limitFPSSelect.value = maxFPS;
-        }
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, {
+      type: "getPopupState",
     });
+  });
 
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-            type: 'getPopupState',
-        });
-    });
+  function sendEnable(e) {
+    var enable = e.target.checked;
 
-    function sendDropFrames(e) {
-        var dropPecentage = parseFloat(e.target.value);
-
-        var message = {
-            type:"dropFrames",
-            value: dropPecentage,
-        };
-
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, message);
-        });
+    var message = {
+      type: "enable",
+      value: enable,
     };
 
-    function sendLimitFPS(e) {
-        var maxFPS = parseFloat(e.target.value);
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, message);
+    });
+  }
 
-        var message = {
-            type:"limitFPS",
-            value: maxFPS,
-        };
-
-        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-            chrome.tabs.sendMessage(tabs[0].id, message);
-        });
-    };
-
-    dropFramesSelect.addEventListener('change', sendDropFrames);
-    limitFPSSelect.addEventListener('change', sendLimitFPS);
+  enableInput.addEventListener("change", sendEnable);
 });
-

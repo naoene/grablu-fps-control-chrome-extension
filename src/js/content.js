@@ -1,108 +1,63 @@
-let dropFrames = 0;
-let maxFPS = 0;
+let enable = false;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    switch (message.type) {
-        case 'getPopupState':
-            chrome.runtime.sendMessage({
-                type: 'setPopupState',
-                value: {
-                    dropFrames: dropFrames,
-                    maxFPS: maxFPS,
-                }
-            });
-            break;
-        case 'dropFrames':
-            processDropFrames(message.value);
-            break;
-        case 'limitFPS':
-            processLimitFPS(message.value);
-            break;
-        default:
-            break;
-    }
+  switch (message.type) {
+    case "getPopupState":
+      chrome.runtime.sendMessage({
+        type: "setPopupState",
+        value: {
+          enable,
+        },
+      });
+      break;
+    case "enable":
+      processEnable(message.value);
+      break;
+    default:
+      break;
+  }
 });
 
-function processDropFrames(percentage) {
-    dropFrames = percentage || 0;
-
-    if (!percentage) {
-        var elt = document.createElement("script");
-        elt.innerHTML = `window.disableDropFPS();`;
-        document.head.appendChild(elt);
-    } else {
-        var elt = document.createElement("script");
-        elt.innerHTML = ` window.setSkipProcent(${percentage}) ;window.enableVirtualRAF();`;
-        document.head.appendChild(elt);
-    }
-}
-
-function processLimitFPS(maxFPSArg) {
-    maxFPS = maxFPSArg || 0;
-
-    if (!maxFPS) {
-        var elt = document.createElement("script");
-        elt.innerHTML = `window.disableLimitFPS();`;
-        document.head.appendChild(elt);
-    } else {
-        var elt = document.createElement("script");
-        elt.innerHTML = `window.setFPSLimit(${maxFPS}) ; window.enableVirtualRAF();`;
-        document.head.appendChild(elt);
-    }
+function processEnable(flag) {
+  enable = flag || false;
+  if (!enable) {
+    var elt = document.createElement("script");
+    elt.innerHTML = `window.disableGrabluExtension();`;
+    document.head.appendChild(elt);
+  } else {
+    var elt = document.createElement("script");
+    elt.innerHTML = `window.enableGrabluExtension();`;
+    document.head.appendChild(elt);
+  }
 }
 
 var scriptContent = `
-window.skipProcent = ${dropFrames};
-window.maxFPS = ${maxFPS};
-window.frameDelay = 0;
-
-var rafs = 0;
+var grabluTargetMS = 32;
 
 var raf = window.requestAnimationFrame;
-var nextRAFTime = Date.now();
+var nextRAFTime = Date.now() + grabluTargetMS;
 
 var mockedRaf = (callback) => {
-    var skip = (window.maxFPS !== 0 && Date.now() < nextRAFTime) || Math.random() < window.skipProcent;
-    
-    if (skip) {
-        skippingRaf(callback);
+    var now = Date.now();
+    if (now >= nextRAFTime) {
+        nextRAFTime = now + grabluTargetMS;
+        callback();
     } else {
-        nextRAFTime = Date.now() + window.frameDelay;
-        raf(callback);
+        skipRaf(callback);
     }
-
-    return rafs++;
 }
 
-function skippingRaf(func) {
-    raf(() => {
-        window.requestAnimationFrame(func);
-    })
+var skipRaf = (callback) => {
+    setTimeout(callback, 1);
 }
 
-window.setFPSLimit = function(v) {
-    window.frameDelay = 1000 / v;
-    window.maxFPS = v;
-}
 
-window.setSkipProcent = function(v) {
-    window.skipProcent = v; 
-}
-
-window.enableVirtualRAF = function enableDropFPS() {
+window.enableGrabluExtension = function () {
     window.requestAnimationFrame = mockedRaf;
 }
 
-window.disableVirtualRAF = function enableDropFPS() {
+window.disableGrabluExtension = function () {
     window.requestAnimationFrame = raf;
-}
-
-window.disableDropFPS = function disableDropFPS() {
-    window.skipProcent = 0;
-}
-
-window.disableLimitFPS = function disableLimitFPS() {
-    window.maxFPS = 0;
 }
 `;
 
